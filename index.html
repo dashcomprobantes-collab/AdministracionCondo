@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Administración Condominio</title>
+<script>try{document.documentElement.setAttribute('data-palette',localStorage.getItem('condo_paleta')||'azul-verde')}catch(e){document.documentElement.setAttribute('data-palette','azul-verde')}</script>
+<style>
+:root{
+  --bg:#f7f7f8; --card:#fff; --text:#1a1a1a; --muted:#6b7280; --border:#e5e7eb;
+  --accent:#2563eb; --danger:#dc2626; --ok:#16a34a; --warn:#d97706; --thead-bg:#e5e7eb;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#111318; --card:#1b1e25; --text:#f2f2f2; --muted:#9aa0a8; --border:#2b2f38; --thead-bg:#2b3038; }
+}
+:root[data-theme="dark"]{ --bg:#111318; --card:#1b1e25; --text:#f2f2f2; --muted:#9aa0a8; --border:#2b2f38; --thead-bg:#2b3038; }
+html{ scroll-padding-top:env(safe-area-inset-top,0px); height:100%; }
+*{box-sizing:border-box;}
+body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+.app-shell{display:flex;min-height:100vh;}
+:root{--btn-top:#ffffff;--btn-bot:#d9dde3;--btn-text:#1a1a1a;--btn-hi:rgba(255,255,255,.95);--btn-sh:rgba(0,0,0,.22);}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--btn-top:#3a404b;--btn-bot:#252a33;--btn-text:#f2f2f2;--btn-hi:rgba(255,255,255,.18);--btn-sh:rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{--btn-top:#3a404b;--btn-bot:#252a33;--btn-text:#f2f2f2;--btn-hi:rgba(255,255,255,.18);--btn-sh:rgba(0,0,0,.6);}
+.sidebar{width:190px;flex-shrink:0;background:var(--side-bg,var(--card));border-right:1px solid var(--side-border,var(--border));padding:calc(16px + env(safe-area-inset-top,0px)) 12px 16px;display:flex;flex-direction:column;gap:12px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sidebar .brand{font-size:15px;font-weight:700;margin:0 6px 4px;color:var(--side-text,inherit);}
+.sidebar button{border:none;background:linear-gradient(180deg,var(--btn-top),var(--btn-bot));color:var(--btn-text);padding:11px 16px;border-radius:999px;font-size:14px;font-weight:600;text-align:left;width:100%;cursor:pointer;box-shadow:0 3px 6px var(--btn-sh),inset 0 1px 0 var(--btn-hi),inset 0 -2px 0 rgba(0,0,0,.12);transition:transform .12s ease,box-shadow .12s ease;}
+.sidebar button:hover{transform:translateY(-1px);box-shadow:0 5px 9px var(--btn-sh),inset 0 1px 0 var(--btn-hi),inset 0 -2px 0 rgba(0,0,0,.12);}
+.sidebar button:active{transform:translateY(1px);box-shadow:0 1px 2px var(--btn-sh),inset 0 2px 4px rgba(0,0,0,.25);}
+.sidebar button.active{background:var(--act-bg,linear-gradient(180deg,#3b82f6,#1d4ed8));color:#fff;box-shadow:0 3px 6px var(--act-sh,rgba(29,78,216,.45)),inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.2);}
+.content{flex:1;min-width:0;background:var(--scr-bg,transparent);}
+@media (max-width:640px){
+  .app-shell{flex-direction:column;}
+  .sidebar{width:100%;height:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:none;border-bottom:1px solid var(--border);padding:calc(10px + env(safe-area-inset-top,0px)) 10px 10px;}
+  .sidebar .brand{display:none;}
+  .sidebar button{width:auto;flex:0 0 auto;white-space:nowrap;}
+}
+/* Paletas: menú lateral y pantallas, con degradado. Sin data-palette o "original" = colores de siempre. */
+:root[data-palette="azul-verde"]{
+  --side-bg:linear-gradient(180deg,#3d63dd 0%,#1f3aa8 50%,#0f1f66 100%);
+  --scr-bg:linear-gradient(135deg,#2f8f4e 0%,#1e6b3a 50%,#0d3b20 100%);
+  --act-bg:linear-gradient(180deg,#3fae62,#1e6b3a); --act-sh:rgba(0,0,0,.4);
+  --side-text:#fff; --side-border:rgba(255,255,255,.18); --card-sh:0 4px 14px rgba(0,0,0,.25);
+}
+:root[data-palette="verde-azul"]{
+  --side-bg:linear-gradient(180deg,#2f8f4e 0%,#1e6b3a 50%,#0d3b20 100%);
+  --scr-bg:linear-gradient(135deg,#3d63dd 0%,#2545b8 50%,#122772 100%);
+  --act-bg:linear-gradient(180deg,#5b82ee,#2545b8); --act-sh:rgba(0,0,0,.4);
+  --side-text:#fff; --side-border:rgba(255,255,255,.18); --card-sh:0 4px 14px rgba(0,0,0,.25);
+}
+.card,.stat{box-shadow:var(--card-sh,none);}
+:root:not([data-palette="original"]) main>.empty{color:rgba(255,255,255,.9);}
+.sidebar .swatches{display:flex;align-items:center;gap:10px;margin-top:auto;padding:12px 6px 0;}
+.sidebar .swatches .sw-label{font-size:11px;color:var(--side-text,var(--muted));opacity:.85;}
+.sidebar .swatches .sw{width:28px;height:28px;padding:0;border-radius:50%;border:2px solid rgba(128,128,128,.55);cursor:pointer;flex:0 0 auto;box-shadow:0 2px 5px rgba(0,0,0,.35);}
+.sidebar .swatches .sw:hover{transform:scale(1.12);}
+.sidebar .swatches .sw.sel{border-color:#fff;box-shadow:0 0 0 3px var(--side-text,var(--accent)),0 2px 5px rgba(0,0,0,.35);}
+@media (max-width:640px){.sidebar .swatches{margin-top:0;margin-left:auto;padding:0 6px;}.sidebar .swatches .sw-label{display:none;}}
+main{padding:16px;max-width:900px;margin:0 auto;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;}
+h3{margin:0 0 10px;font-size:15px;}
+.tablewrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border);white-space:nowrap;}
+th{background:var(--thead-bg);}
+.badge{padding:3px 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;}
+.badge.ok{background:rgba(22,163,74,.15);color:var(--ok);}
+.badge.warn{background:rgba(220,38,38,.15);color:var(--danger);}
+input,select{width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:14px;margin-bottom:8px;}
+label{font-size:12px;color:var(--muted);}
+button.primary{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;font-size:14px;cursor:pointer;}
+button.small{padding:5px 10px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;white-space:nowrap;}
+button.small.danger{color:var(--danger);border-color:var(--danger);}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.row>*{flex:1;min-width:140px;}
+.tag{font-size:11px;color:var(--muted);}
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:20px 0;}
+.hidden{display:none;}
+.subcard{border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:10px;background:var(--bg);}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:14px;}
+.stat{background:var(--thead-bg);border:1px solid var(--border);border-radius:12px;padding:18px;}
+.stat .v{font-size:29px;font-weight:700;color:#1d4ed8;}
+.stat .l{font-size:18px;color:#1a1a1a;margin-top:4px;}
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:200;padding:16px;}
+#modal-overlay .card{max-width:340px;width:100%;margin:0;}
+.stat{padding:14px}.stat .v{font-size:20px}.stat .l{font-size:13px}
+small{font-size:.72em;color:var(--muted);font-weight:500}.stat .v small{display:block;font-size:12px}
+small.usd-amt{font-size:1.1232em;}
+.gridstats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:12px}
+@media(max-width:1100px){.gridstats{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}}
+#clock{margin:12px 16px 0 auto;width:max-content;text-align:right;font-size:13px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px 12px;cursor:pointer}
+@media print{.sidebar,#clock,#error-banner,button{display:none!important}}
+main{max-width:1200px}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<nav id="tabs" class="sidebar">
+<div class="brand">🏢 Condominio</div>
+<button data-tab="resumen" class="active">Dashboard</button>
+<button data-tab="noticias">Noticias</button>
+<button data-tab="deptos">Apartamentos</button>
+<button data-tab="movs">Movimientos</button>
+<button data-tab="cuota">Crear Cuota</button>
+<button data-tab="recibo">Crear Recibo de Pago</button>
+<button data-tab="config">Configuración</button>
+<div class="swatches" role="group" aria-label="Paleta de colores">
+<span class="sw-label">Paleta</span>
+<button class="sw" data-palette-pick="azul-verde" title="Menú azul rey · Pantallas verde bosque" aria-label="Menú azul rey, pantallas verde bosque" style="background:linear-gradient(135deg,#3d63dd 50%,#1e6b3a 50%)"></button>
+<button class="sw" data-palette-pick="verde-azul" title="Menú verde bosque · Pantallas azul rey" aria-label="Menú verde bosque, pantallas azul rey" style="background:linear-gradient(135deg,#1e6b3a 50%,#3d63dd 50%)"></button>
+<button class="sw" data-palette-pick="original" title="Colores originales" aria-label="Colores originales" style="background:linear-gradient(135deg,#ffffff 50%,#e5e7eb 50%)"></button>
+</div>
+</nav>
+<div class="content">
+<div id="clock" title="Toca para cambiar la tasa"></div>
+<div id="demo-banner" class="hidden" style="background:#fef3c7;color:#92400e;padding:8px 12px;font-size:13px;margin:12px 16px 0;border-radius:8px;">Modo demostración: estás viendo datos de ejemplo para que veas la estructura. Los cambios que hagas aquí no se guardan.</div>
+<div id="error-banner" class="hidden" style="background:#fee2e2;color:#991b1b;padding:8px 12px;font-size:13px;margin:12px 16px 0;border-radius:8px;"></div>
+<main id="app"><div class="empty">Cargando…</div></main>
+</div>
+</div>
+
+<div id="modal-overlay">
+  <div class="card" data-enter="#modal-ok">
+    <p id="modal-msg"></p>
+    <input id="modal-input" class="hidden">
+    <div class="row">
+      <button class="small" id="modal-cancel">Cancelar</button>
+      <button class="primary" id="modal-ok">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div id="hist-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;">
+  <div class="card" style="max-width:480px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div class="row" style="justify-content:space-between;align-items:center;">
+      <h3 id="hist-title" style="margin:0;"></h3>
+      <button class="small" id="hist-close" style="width:20px;height:20px;padding:0;font-size:11px;line-height:1;flex:0 0 auto;min-width:0;" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="subcard" id="hist-form" data-enter="#hist-add-pagado">
+      <label>Agregar/actualizar un mes en el historial</label>
+      <div class="row" style="align-items:center;">
+        <div style="flex:0 0 auto;display:flex;align-items:center;gap:8px;">
+          <button type="button" id="hist-add-mes-btn" class="small" style="width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;font-size:14px;" aria-label="Elegir mes">📅</button>
+          <input type="month" id="hist-add-mes" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;">
+          <span id="hist-add-mes-label" class="tag">Ningún mes elegido</span>
+        </div>
+        <input type="number" step="0.01" id="hist-add-monto" placeholder="Monto de la cuota">
+      </div>
+      <div class="row">
+        <button class="small" id="hist-add-pagado" style="border-color:var(--ok);color:var(--ok);">✓ Pagó</button>
+        <button class="small danger" id="hist-add-mora">✕ No pagó</button>
+      </div>
+      <p class="tag">Elige el mes e ingresa el monto de la cuota de ese mes; luego confirma si pagó o no. Si no pagó, ese monto queda registrado como deuda pendiente en el historial.</p>
+    </div>
+    <div class="subcard" id="pago-form" style="display:none" data-enter="#pago-aplicar">
+      <label>Monto recibido (USD)</label>
+      <div class="row"><input id="pago-monto" type="number" step="0.01" placeholder="Ej: 45"><input id="pago-fecha" type="date"></div>
+      <button class="primary" id="pago-aplicar">Aplicar pago</button>
+      <p class="tag" id="pago-info"></p>
+    </div>
+    <div id="hist-body"></div>
+  </div>
+</div>
+
+<div id="rec-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;">
+  <div class="card" style="max-width:560px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div class="row" style="justify-content:space-between;align-items:center;">
+      <h3 id="rec-title" style="margin:0;"></h3>
+      <button class="small" id="rec-close" style="width:20px;height:20px;padding:0;font-size:11px;line-height:1;flex:0 0 auto;min-width:0;" aria-label="Cerrar">✕</button>
+    </div>
+    <div id="rec-body"></div>
+  </div>
+</div>
+
+<div id="prev-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:150;padding:16px;">
+  <div class="card" style="max-width:820px;width:100%;height:90vh;display:flex;flex-direction:column;margin:0;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+      <h3 style="margin:0;">Vista previa del PDF de la cuota</h3>
+      <div style="display:flex;align-items:center;gap:10px;flex:0 0 auto;">
+        <a id="prev-open" href="#" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);white-space:nowrap;">Abrir PDF en pestaña nueva</a>
+        <a id="prev-download" href="#" download="cuota.pdf" style="font-size:12px;color:var(--accent);white-space:nowrap;">Descargar PDF</a>
+        <button class="small" id="prev-close">Cerrar</button>
+      </div>
+    </div>
+    <div id="prev-body" style="flex:1;overflow:auto;background:#e5e7eb;border:1px solid var(--border);border-radius:8px;padding:12px;"></div>
+    <p class="tag" style="margin:8px 0 0;">Así se verá el contenido para los propietarios; el PDF se genera con estos mismos datos. Todavía no se ha guardado ni enviado nada.</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyD-TmS5odRwmuU_IKj0crL14ZCjOleBsL0",
+  authDomain: "condominio-a7ee4.firebaseapp.com",
+  projectId: "condominio-a7ee4",
+  storageBucket: "condominio-a7ee4.firebasestorage.app",
+  messagingSenderId: "570239428257",
+  appId: "1:570239428257:web:1905283036832bf3ff72e0"
+};
+
+let db=null, offline=false, editingDeptoId=null, showAddForm=false;
+let deptos=[], movs=[], pagos=[], config={saldo_inicial:0, fondo_emergencia:0, deuda_actual:0, usar_cuota_manual:true, cuota_manual:0};
+let currentTab='resumen';
+
+const SUBCATS = {
+  'Servicios públicos': ['Corpoelec','Hidrolago','Sedemat','Otro'],
+  'Pago a trabajadores': ['Jardín','Conserje','Vigilante','Feriado','Otro']
+};
+let importStatusMsg = '';
+const IMPORT_DIRECTORIO = [
+  {numero:'1-1',propietario:'María Cordero',tel:'+ 1 (945) 2424880',email:''},
+  {numero:'1-2',propietario:'Jesús Infante',tel:'0414-2575535',email:'Capitanjesus53@gmail.com'},
+  {numero:'1-3',propietario:'Elizabeth Negrette',tel:'0424-6025506',email:'elizabeth_negrette@hotmail.com'},
+  {numero:'1-4',propietario:'Neovis Martinez',tel:'0412-6889486',email:'nmmartimez1232@gmail.com'},
+  {numero:'1-5',propietario:'Laura Castro',tel:'0424-6560283',email:''},
+  {numero:'1-6',propietario:'Aura de Morillo',tel:'0412-5656405',email:'aemdem1954@gmail.com'},
+  {numero:'2-1',propietario:'Isis Fernández',tel:'0424-6436570',email:'fernandezreinaisis@yahoo.com'},
+  {numero:'2-2',propietario:'Alive Gutiérrez',tel:'0412-0699350',email:'alivegutierrezbaron@gmail.com'},
+  {numero:'2-3',propietario:'Marilis Caridad',tel:'0424-6012859',email:'marianazapata729382@gmail.com'},
+  {numero:'2-4',propietario:'Yadira Bucobo',tel:'0414-6581095',email:'Yadirabucobo2021@gmail.com'},
+  {numero:'2-5',propietario:'Nancy de Pirela',tel:'0412-6573652',email:'Kelvinpirela@gmail.com'},
+  {numero:'2-6',propietario:'Renia de Perozo',tel:'0416-0716444',email:''},
+  {numero:'3-1',propietario:'Luz Méndez',tel:'0412-6653552',email:'franciscojavier_12@hotmail.com'},
+  {numero:'3-2',propietario:'Charlie Castro',tel:'+ 57 316 5635349',email:'charlisvinci@hotmail.com'},
+  {numero:'3-3',propietario:'Alfredo Sánchez',tel:'0414-6370532',email:'Mgdesanchez2303@hotmail.com'},
+  {numero:'3-4',propietario:'Jenny Escamilla',tel:'0424-6831747',email:'alexandraprodrigueze@gmail.com'},
+  {numero:'3-5',propietario:'Sol Faría',tel:'+ 1 (689) 2589829',email:'liviaf82@gmail.com'},
+  {numero:'3-6',propietario:'Indira Sánchez',tel:'0412-6654251',email:'indiraandrea07@gmail.com'},
+  {numero:'4-1',propietario:'Nelly Vergara',tel:'',email:''},
+  {numero:'4-2',propietario:'Lorenys Rivas',tel:'0424-6208998',email:'Lorenys2020@gmail.com'},
+  {numero:'4-3',propietario:'Mireya de Cubillán',tel:'0412-1763981',email:''},
+  {numero:'4-4',propietario:'Yesenia Arraga',tel:'+ 56 9 6464 9790',email:''},
+  {numero:'4-5',propietario:'Greisby Arroyo',tel:'0414-6647511',email:'greisbyarroyo34@gmail.com'},
+  {numero:'4-6',propietario:'Carmen Villalobos',tel:'0424-6026633',email:'carvervilla@gmail.com'},
+  {numero:'5-1',propietario:'Yormar Torres',tel:'0412-5391599',email:'yormartm1@gmail.com'},
+  {numero:'5-2',propietario:'Eliézer Galué',tel:'0424-6224382',email:'eliezerrafael8@gmail.com'},
+  {numero:'5-3',propietario:'Lenys Amesty',tel:'0424-6277529',email:''},
+  {numero:'5-4',propietario:'Xiomara Santiago',tel:'0424-6333418',email:'marermis.garcia@gmail.com'},
+  {numero:'5-5',propietario:'Jorge Villalobos',tel:'0412-1106843',email:''},
+  {numero:'5-6',propietario:'Norma Bravo',tel:'0424-6020630',email:'jorgeljimenezb@gmail.com'},
+  {numero:'6-1',propietario:'Liz Anchiraco Vílchez',tel:'+1 (629) 345-1550',email:'peruvenezuelacolombia22@gmail.com'},
+  {numero:'6-2',propietario:'Hernán Parra',tel:'0424-600833',email:'lema43338@gmail.com'},
+  {numero:'6-3',propietario:'Mildred Marín',tel:'',email:'robinson1102@hotmail.com'},
+  {numero:'6-4',propietario:'Carlos Carrizo',tel:'0414-3674465',email:'Carlos_carrizo85@hotmail.com'},
+  {numero:'6-5',propietario:'Douglas Villasmil',tel:'0414-0801217',email:'virginiapatriciavillasmil2507@gmail.com'},
+  {numero:'6-6',propietario:'Carlos Araujo',tel:'0424-6681791',email:''},
+  {numero:'7-1',propietario:'Josmar Delgado',tel:'0412-5943348',email:''},
+  {numero:'7-2',propietario:'Edward Atencio',tel:'0424-6436326',email:'Edwardatenciogarcia1@gmail.com'},
+  {numero:'7-3',propietario:'Marco Rivero',tel:'0414-6329132',email:'Marcopunto34@gmail.com'},
+  {numero:'7-4',propietario:'José Pineda',tel:'0424-6102079',email:'josegregorio-28@hotmail.com'},
+  {numero:'7-5',propietario:'Leyce Guillen',tel:'0414-6253989',email:'lcgb64@gmail.com'},
+  {numero:'7-6',propietario:'Anny Romero',tel:'0424-6089612',email:'abogadaannyalexandraromero@gmail.com'},
+  {numero:'8-1',propietario:'Angel Almarza',tel:'0414-6115240',email:'angelenriquex78@gmail.com'},
+  {numero:'8-2',propietario:'Jorge Nava',tel:'0414-9643933 / 0414-0679197',email:''},
+  {numero:'8-3',propietario:'Lisbeth Villasmil',tel:'0424-6914734',email:''},
+  {numero:'8-4',propietario:'Astrid Ortíz',tel:'0424-6420654',email:'Astridortiz010985@gmail.com'},
+  {numero:'8-5',propietario:'Nelson Soto',tel:'0424-6786785',email:''},
+  {numero:'8-6',propietario:'Carmen Herazo',tel:'0414-6116955',email:''},
+  {numero:'PH-1',propietario:'Osvaldo Sánchez',tel:'',email:''},
+  {numero:'PH-2',propietario:'Martha Moreno',tel:'',email:'marthacmorenob1970@gmail.com'},
+  {numero:'PH-3',propietario:'Alex Hernández',tel:'+56 9 7557 1756',email:'alexeper@gmail.com'},
+  {numero:'PH-4',propietario:'Yennys Fernández',tel:'+1 (586) 627-4583',email:'Yennysfernandez19@gmail.com'},
+  {numero:'Local 1',propietario:'Javier Reyna',tel:'',email:''},
+  {numero:'Local 2',propietario:'Javier Reyna',tel:'',email:''},
+  {numero:'PB-1',propietario:'Willy Sánchez',tel:'0412-0795027',email:'Migocherito28@gmail.com'},
+  {numero:'PB-2',propietario:'Carlos Medina',tel:'0414-6278064',email:'carlosluis1953@hotmail.com'},
+  {numero:'PB-3',propietario:'Dalmiro León',tel:'0424-6834117',email:'dalmiroleonguerra61@gmail.com'},
+  {numero:'PB-4',propietario:'Carlos Matos',tel:'0412-6820859',email:'carlosmatosmata@yahoo.es'}
+];
+
+async function importarDirectorio(){
+  const existentes = new Set(deptos.map(d=>d.numero));
+  const nuevos = IMPORT_DIRECTORIO.filter(d=>!existentes.has(d.numero));
+  if(!nuevos.length){ importStatusMsg = 'Todos los apartamentos del directorio ya estaban cargados.'; render(); return; }
+  importStatusMsg = 'Importando '+nuevos.length+' apartamentos...';
+  render();
+  try{
+    for(const d of nuevos){
+      const data = {numero:d.numero, propietario:d.propietario, ocupante_tipo:'propietario', arrendatario_nombre:'', tel:d.tel, email:d.email, tel_dueno:'', email_dueno:''};
+      if(db) await db.collection('departamentos').add(data);
+      else addLocal(deptos, data);
+    }
+    importStatusMsg = 'Se importaron '+nuevos.length+' apartamentos nuevos.';
+  }catch(err){
+    importStatusMsg = 'Error al importar: '+(err&&err.message?err.message:String(err));
+  }
+  render();
+}
+
+async function restaurarDirectorioOriginal(){
+  const ok = await customConfirm('Esto eliminará TODOS los apartamentos actuales ('+deptos.length+') y los reemplazará por los 58 originales del directorio. ¿Continuar?');
+  if(!ok) return;
+  importStatusMsg = 'Eliminando apartamentos actuales...';
+  render();
+  try{
+    if(db){
+      const snap = await db.collection('departamentos').get();
+      for(const docSnap of snap.docs){
+        await db.collection('departamentos').doc(docSnap.id).delete();
+      }
+    } else {
+      deptos.length = 0;
+    }
+    importStatusMsg = 'Restaurando los 58 apartamentos originales...';
+    render();
+    for(const d of IMPORT_DIRECTORIO){
+      const data = {numero:d.numero, propietario:d.propietario, ocupante_tipo:'propietario', arrendatario_nombre:'', tel:d.tel, email:d.email, tel_dueno:'', email_dueno:''};
+      if(db) await db.collection('departamentos').add(data);
+      else addLocal(deptos, data);
+    }
+    importStatusMsg = 'Se restauraron los 58 apartamentos originales.';
+  }catch(err){
+    importStatusMsg = 'Error al restaurar: '+(err&&err.message?err.message:String(err));
+  }
+  render();
+}
+
+let tasa=0;
+function fmt(n){const u=Number(n)||0;const s='$'+u.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});return tasa?s+' <small>Bs '+(u*tasa).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})+'</small>':s;}
+function fmtBs(n){const b=Number(n)||0;const s='Bs '+b.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});return tasa?s+' <small class="usd-amt">$'+(b/tasa).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</small>':s+' <small class="usd-amt">(ingresa la tasa BCV arriba para ver el equivalente en $)</small>';}
+function fmtBs(n){const b=Number(n)||0;const s='Bs '+b.toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});return tasa?s+' <small>$'+(b/tasa).toFixed(2)+'</small>':s+' <small>(sin tasa)</small>';}
+function mesActual(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+
+function showModal(){ document.getElementById('modal-overlay').style.display='flex'; }
+function hideModal(){ document.getElementById('modal-overlay').style.display='none'; }
+function customConfirm(msg){
+  return new Promise(resolve=>{
+    document.getElementById('modal-msg').textContent = msg;
+    document.getElementById('modal-input').classList.add('hidden');
+    showModal();
+    const ok=document.getElementById('modal-ok'), cancel=document.getElementById('modal-cancel');
+    ok.onclick=()=>{ hideModal(); resolve(true); };
+    cancel.onclick=()=>{ hideModal(); resolve(false); };
+  });
+}
+function customPrompt(msg, defVal){
+  return new Promise(resolve=>{
+    document.getElementById('modal-msg').textContent = msg;
+    const input=document.getElementById('modal-input');
+    input.classList.remove('hidden'); input.value = defVal!=null?defVal:'';
+    showModal();
+    const ok=document.getElementById('modal-ok'), cancel=document.getElementById('modal-cancel');
+    ok.onclick=()=>{ hideModal(); resolve(input.value); };
+    cancel.onclick=()=>{ hideModal(); resolve(null); };
+  });
+}
+
+function totalesMes(mes){
+  const ing = movs.filter(m=>m.tipo==='ingreso' && (m.fecha||'').startsWith(mes)).reduce((a,b)=>a+Number(b.monto||0),0);
+  const egr = movs.filter(m=>(m.tipo==='egreso'||m.tipo==='gasto') && (m.fecha||'').startsWith(mes)).reduce((a,b)=>a+Number(b.monto||0),0);
+  return {ing,egr};
+}
+function saldoBanco(){
+  const totIng = movs.filter(m=>m.tipo==='ingreso').reduce((a,b)=>a+Number(b.monto||0),0);
+  const totEgr = movs.filter(m=>m.tipo==='egreso'||m.tipo==='gasto').reduce((a,b)=>a+Number(b.monto||0),0);
+  return Number(config.saldo_inicial||0) + totIng - totEgr;
+}
+function cuotaSugerida(){
+  if(config.usar_cuota_manual) return Number(config.cuota_manual)||0;
+  const {egr} = totalesMes(mesActual());
+  const n = deptos.length || 1;
+  return (egr + Number(config.fondo_emergencia||0)) / n;
+}
+function pagoDelMes(deptoId, mes){ return pagos.find(p=>p.depto_id===deptoId && p.mes===mes && p.estado!=='mora'); }
+function registroDelMes(deptoId, mes){ return pagos.find(p=>p.depto_id===deptoId && p.mes===mes); }
+
+let histDeptoId = null;
+function showHistorial(deptoId, editable){
+  histDeptoId = deptoId; if(editable!==undefined) histEditable=editable;
+  const d = deptos.find(x=>x.id===deptoId);
+  if(!d) return;
+  document.getElementById('hist-title').textContent = (histPago?'Registrar pago':'Historial') + ' — Apto ' + d.numero + (d.propietario? ' · '+d.propietario:'');
+  const pagosDepto = pagos.filter(p=>p.depto_id===deptoId).sort((a,b)=>(b.mes||'').localeCompare(a.mes||''));
+  const porAno = {};
+  pagosDepto.forEach(p=>{ const ano=(p.mes||'').slice(0,4)||'Sin fecha'; (porAno[ano]=porAno[ano]||[]).push(p); });
+  const anos = Object.keys(porAno).sort((a,b)=>b.localeCompare(a));
+  let html = '';
+  if(!anos.length) html = '<p class="empty">Sin meses registrados todavía</p>';
+  anos.forEach(ano=>{
+    const totalAno = porAno[ano].filter(p=>p.estado!=='mora').reduce((a,b)=>a+Number(b.monto||0),0);
+    html += `<h4 style="margin:14px 0 6px;font-size:14px;">${ano} <span class="tag">(total pagado: ${fmt(totalAno)})</span></h4>`;
+    html += '<div class="tablewrap"><table><tr><th>Mes</th><th>Estado</th><th>Monto</th><th>Fecha</th><th></th></tr>';
+    porAno[ano].forEach(p=>{
+      const esMora = p.estado!=='pagado';
+      const badge = p.estado==='pagado' ? '<span class="badge ok">Pagado</span>' : (p.estado==='parcial' ? '<span class="badge warn">Parcial</span>' : '<span class="badge warn">En mora</span>');
+      html += `<tr><td>${p.mes}</td><td>${badge}</td><td>${fmt(p.monto)}${esMora?' <span class="tag">(pendiente: '+fmt(Number(p.monto)-Number(p.abonado||0))+')</span>':''}</td><td>${esMora?'':(p.fecha_pago||'')}</td><td>${histEditable&&!histPago?'<button class="small danger" data-hist-del="'+p.id+'">Eliminar</button>':''}</td></tr>`;
+    });
+    html += '</table></div>';
+  });
+  document.getElementById('hist-body').innerHTML = html;
+  document.getElementById('hist-form').style.display = (histEditable&&!histPago)?'':'none';
+  document.getElementById('pago-form').style.display = histPago?'':'none';
+  if(!g('pago-fecha').value) g('pago-fecha').value=new Date().toISOString().slice(0,10);
+  g('pago-info').innerHTML='Deuda vencida actual: '+fmt(deudaDepto(deptoId))+'<br>El monto se aplica primero a las deudas más antiguas, luego a los meses siguientes; lo que sobre queda como adelanto.';
+  document.getElementById('hist-overlay').style.display='flex';
+}
+function addLocal(arr, data){ const id='demo-'+Date.now()+Math.random().toString(36).slice(2,7); arr.push({id, ...data}); return id; }
+function removeLocal(arr, id){ const i=arr.findIndex(x=>x.id===id); if(i>-1) arr.splice(i,1); }
+
+const g=id=>document.getElementById(id);
+const numSort=(a,b)=>(a.numero||'').localeCompare(b.numero||'',undefined,{numeric:true});
+const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const HISTORIAL_EDITABLE=true; // cambiar a false cuando el historial esté completo (solo visualización)
+let histEditable=true, histPago=false, cuotaDraft={fijos:[],vars:[]}, recibos=[];
+const FIJOS=['Honorarios profesionales Administrador Externo','Corpoelec','Hidroven'];
+
+async function cargarTasa(){ try{ const r=await fetch('https://ve.dolarapi.com/v1/dolares/oficial'); const j=await r.json(); tasa=Number(j.promedio)||tasa; }catch(e){} tickClock(); render(); }
+function tickClock(){ const d=new Date(); g('clock').innerHTML=d.toLocaleDateString('es-VE',{weekday:'short',day:'2-digit',month:'short',year:'numeric'})+' · <b>'+d.toLocaleTimeString('es-VE')+'</b><br><span class="tag">Tasa BCV: '+(tasa?'Bs '+tasa.toFixed(2)+' / USD':'toca para ingresarla')+'</span>'; }
+setInterval(tickClock,1000); tickClock();
+g('clock').onclick=async()=>{ const v=await customPrompt('Tasa BCV (Bs por USD)',tasa||''); if(v&&Number(v)>0){ tasa=Number(v); tickClock(); render(); } };
+
+// Semáforo: el 1 de octubre se vence agosto (mes actual - 2); se muestran los 6 meses vencidos más recientes
+function meses6(){ const n=new Date(); const b=n.getFullYear()*12+n.getMonth()-2; return Array.from({length:6},(_,i)=>{ const t=b-5+i; return Math.floor(t/12)+'-'+String(t%12+1).padStart(2,'0'); }); }
+function pagadoMes(id,m){ return pagos.some(p=>p.depto_id===id&&p.mes===m&&p.estado==='pagado'); }
+function deudaDepto(id){ const lim=meses6()[5]; return pagos.filter(p=>p.depto_id===id&&p.estado!=='pagado'&&p.mes<=lim).reduce((a,b)=>a+Number(b.monto||0)-Number(b.abonado||0),0); }
+function semaforo(id){ return '<span style="display:inline-flex;gap:4px">'+meses6().map(m=>'<span title="'+m+'" style="width:14px;height:14px;border-radius:50%;background:'+(pagadoMes(id,m)?'var(--ok)':'var(--danger)')+'"></span>').join('')+'</span>'; }
+
+const sumM=a=>a.reduce((x,y)=>x+Number(y.monto||0),0);
+function totalesCuota(){ const tf=sumM(cuotaDraft.fijos), tv=sumM(cuotaDraft.vars), tg=tf+tv, fr=tg*0.3; return {tf,tv,tg,fr,total:tg+fr}; }
+function renderCuota(){
+  const n=new Date(), M=MESES[n.getMonth()], {tf,tv,tg,fr}=totalesCuota();
+  const li=(a,k)=>a.map((x,i)=>`<tr><td>${x.nombre}${x.detalle?' — '+x.detalle:''}</td><td>${fmtBs(x.monto)}</td><td><button class="small danger" data-action="del-cuota" data-k="${k}" data-id="${i}">✕</button></td></tr>`).join('');
+  return `<div class="card"><h3>Recibo de Condominio ${M} ${n.getFullYear()}</h3>
+  <label>Gastos fijos</label>
+  <div class="row" data-enter="[data-action='add-fijo']"><select id="c_fijo">${FIJOS.map(f=>'<option>'+f+'</option>').join('')}</select><input id="c_fijo_m" type="number" step="0.01" placeholder="Monto Bs"><button class="small" data-action="add-fijo">Agregar</button></div>
+  <div class="tablewrap"><table>${li(cuotaDraft.fijos,'fijos')}</table></div><p><b>Total gastos fijos:</b> ${fmtBs(tf)}</p>
+  <label>Gastos variables</label>
+  <div class="row" data-enter="[data-action='add-var']"><input id="c_prov" placeholder="Proveedor"><input id="c_det" placeholder="Detalle"><input id="c_var_m" type="number" step="0.01" placeholder="Monto Bs"><button class="small" data-action="add-var">Agregar</button></div>
+  <div class="tablewrap"><table>${li(cuotaDraft.vars,'vars')}</table></div><p><b>Total gastos variables:</b> ${fmtBs(tv)}</p>
+  <p><b>Total gastos del mes:</b> ${fmtBs(tg)}</p><p><b>30% fondo de reserva:</b> ${fmtBs(fr)}</p>
+  <p style="font-size:16px"><b>TOTAL GASTOS (${M.toUpperCase()}):</b> ${fmtBs(tg+fr)}</p>
+  <div class="row"><button class="small" data-action="vista-previa-cuota" style="flex:0 0 auto;">Vista previa</button><button class="primary" data-action="save-cuota">Guardar cuota y enviar PDF a propietarios</button></div></div>`;
+}
+
+function addMes(m,n){const[y,mo]=m.split('-').map(Number);const t=y*12+mo-1+n;return Math.floor(t/12)+'-'+String(t%12+1).padStart(2,'0');}
+async function guardarRegistroPago(rec){const{id,...data}=rec;if(db){if(id)await db.collection('pagos').doc(id).set(data);else await db.collection('pagos').add(data);}else{if(id)Object.assign(pagos.find(p=>p.id===id)||{},data);else addLocal(pagos,data);}}
+async function aplicarPago(deptoId,usd,fecha,ref){
+  const r2=v=>Math.round(v*100)/100; let x=r2(usd); const total=x, cuota=cuotaSugerida();
+  const mis=pagos.filter(p=>p.depto_id===deptoId);
+  const pend=mis.filter(p=>p.estado!=='pagado').sort((a,b)=>a.mes.localeCompare(b.mes));
+  const deudaPend=pend.reduce((a,p)=>a+Number(p.monto)-Number(p.abonado||0),0);
+  if(x>deudaPend+0.005&&cuota<=0) throw new Error('Define la cuota mensual en Configuración para poder aplicar el excedente como adelanto.');
+  for(const p of pend){
+    if(x<0.005) break;
+    const a=Math.min(x,Number(p.monto)-Number(p.abonado||0));
+    p.abonado=r2(Number(p.abonado||0)+a); x=r2(x-a);
+    if(p.abonado>=Number(p.monto)-0.005){ p.estado='pagado'; p.fecha_pago=fecha; } else p.estado='parcial';
+    await guardarRegistroPago(p);
+  }
+  let m=mis.reduce((mx,p)=>p.mes>mx?p.mes:mx,addMes(mesActual(),-1)), k=0;
+  while(x>0.004&&k++<60){
+    m=addMes(m,1); const a=Math.min(x,cuota), full=a>=cuota-0.005; x=r2(x-a);
+    await guardarRegistroPago({depto_id:deptoId,mes:m,monto:cuota,abonado:r2(a),estado:full?'pagado':'parcial',fecha_pago:full?fecha:''});
+  }
+  const d=deptos.find(z=>z.id===deptoId);
+  const mv={tipo:'ingreso',categoria:'Cuota de condominio',subcategoria:'',monto:total,descripcion:'Pago Apto '+(d?d.numero:'')+' — '+ref,fecha};
+  if(db) await db.collection('movimientos').add(mv); else { addLocal(movs,mv); render(); }
+}
+function lineaHtml(){ return '<div class="r-l"><input class="r_d" placeholder="Detalle (ej. Cuota agosto)"></div>'; }
+function aviso(msg,ok){ const eb=g('error-banner'); eb.textContent=msg; eb.style.background=ok?'#dcfce7':'#fee2e2'; eb.style.color=ok?'#166534':'#991b1b'; eb.classList.remove('hidden'); }
+function nombrePdf(r){ return 'Recibo-'+r.numero+'-Apto'+(r.apto||'')+'.pdf'; }
+function pdfRecibo(r){
+  if(!window.jspdf) throw new Error('No se pudo cargar el generador de PDF (revisa la conexión a internet).');
+  const doc=new window.jspdf.jsPDF(); let y=22;
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text('COMPROBANTE DE PAGO',105,y,{align:'center'}); y+=12; doc.setFontSize(11);
+  const L=(a,b)=>{ doc.setFont('helvetica','bold'); doc.text(a,20,y); doc.setFont('helvetica','normal'); doc.text(String(b||'-'),68,y); y+=8; };
+  L('Recibo N°:',r.numero); L('Fecha de pago:',r.fecha); L('Apto:',r.apto); L('Propietario:',r.propietario);
+  L('Moneda:',r.moneda); L('Tasa del día:',r.tasa?Number(r.tasa).toFixed(4)+' Bs/USD':'-'); L('Referencia:',r.referencia);
+  L('Tipo de transacción:',r.tipo); L('Banco emisor:',r.banco);
+  const det=(r.detalle||[]).map(x=>typeof x==='string'?x:(x.detalle||'')).filter(Boolean);
+  L('Detalle:',det[0]); det.slice(1).forEach(t=>{ doc.text(String(t),68,y); y+=7; });
+  L('Observaciones:',r.observaciones);
+  y+=4; doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text('Total Bs: '+(Number(r.total_bs)||0).toLocaleString('es-VE',{minimumFractionDigits:2}),20,y); y+=8;
+  doc.text('Total USD: '+(Number(r.total_usd)||0).toFixed(2),20,y);
+  return doc;
+}
+// ===== Envío de correo con PDF adjunto (servicio propio en Google Apps Script) =====
+let correoCfg={url:'',clave:'',remitente:''}, envioEnCurso=false;
+const correoListo=()=>!!(correoCfg.url&&correoCfg.clave);
+const escAttr=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const emailValido=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+function emailPropietario(d){ const e=String((d.ocupante_tipo==='arrendatario'?d.email_dueno:d.email)||'').trim(); return emailValido(e)?e:''; }
+function firma(){ return '\n\n'+(correoCfg.remitente||'Administración del Condominio'); }
+function pdfBase64(doc){ return doc.output('datauristring').split('base64,')[1]; }
+async function enviarCorreo({destinatarios,asunto,texto,pdf,archivo}){
+  if(!correoListo()) throw new Error('El servicio de correo no está configurado (Configuración > Envío de correo).');
+  let r;
+  try{
+    r=await fetch(correoCfg.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({clave:correoCfg.clave,remitente:correoCfg.remitente||'',destinatarios,asunto,texto,archivo,pdfBase64:pdf})});
+  }catch(e){ throw new Error('No pude conectar con el servicio de correo (revisa la URL y que la implementación esté publicada para "Cualquier persona"). Si el correo sí salió, aparecerá en Enviados de Gmail.'); }
+  let j; try{ j=await r.json(); }catch(e){ throw new Error('El servicio respondió algo que no pude leer (revisa la URL de la implementación).'); }
+  if(!j.ok) throw new Error('El servicio de correo respondió: '+(j.error||'error desconocido'));
+  return j;
+}
+function pdfCuota(c){
+  if(!window.jspdf) throw new Error('No se pudo cargar el generador de PDF (revisa la conexión a internet).');
+  const doc=new window.jspdf.jsPDF(); let y=20;
+  const bs=v=>'Bs '+Number(v||0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const us=v=>c.tasa?'$ '+(Number(v||0)/c.tasa).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
+  const salto=()=>{ if(y>272){ doc.addPage(); y=20; } };
+  const fila=(txt,monto,neg)=>{ salto(); doc.setFont('helvetica',neg?'bold':'normal'); doc.setFontSize(10);
+    const t=doc.splitTextToSize(String(txt),105); doc.text(t,20,y); doc.text(bs(monto),158,y,{align:'right'}); if(c.tasa) doc.text(us(monto),190,y,{align:'right'}); y+=Math.max(6,t.length*5)+1; };
+  const titulo=t=>{ salto(); y+=3; doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.text(t,20,y); y+=7; };
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text('RECIBO DE CONDOMINIO',105,y,{align:'center'}); y+=8;
+  doc.setFontSize(12); doc.text((c.mesNombre||'').toUpperCase()+' '+c.anio,105,y,{align:'center'}); y+=7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  if(c.nombre){ doc.text(c.nombre,105,y,{align:'center'}); y+=6; }
+  doc.text('Fecha de emisión: '+c.fecha+(c.tasa?'   |   Tasa BCV: Bs '+Number(c.tasa).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:4})+' por USD':''),105,y,{align:'center'}); y+=10;
+  doc.setFont('helvetica','bold'); doc.text('Concepto',20,y); doc.text('Bs',158,y,{align:'right'}); if(c.tasa) doc.text('USD',190,y,{align:'right'}); y+=2; doc.line(20,y,190,y); y+=6;
+  titulo('Gastos fijos'); c.fijos.forEach(x=>fila(x.nombre,x.monto)); fila('Total gastos fijos',c.tf,true);
+  titulo('Gastos variables'); c.vars.forEach(x=>fila(x.nombre+(x.detalle?' - '+x.detalle:''),x.monto)); fila('Total gastos variables',c.tv,true);
+  y+=4; fila('Total gastos del mes',c.tg,true); fila('30% fondo de reserva',c.fr,true);
+  salto(); doc.line(20,y,190,y); y+=6; fila('TOTAL GASTOS ('+(c.mesNombre||'').toUpperCase()+')',c.total,true);
+  return doc;
+}
+function datosCuota(){
+  const T=totalesCuota(), n=new Date();
+  return {mes:mesActual(),anio:n.getFullYear(),mesNombre:MESES[n.getMonth()],fecha:hoyLocal(),tasa:tasa||0,nombre:correoCfg.remitente||'',fijos:cuotaDraft.fijos,vars:cuotaDraft.vars,tf:T.tf,tv:T.tv,tg:T.tg,fr:T.fr,total:T.total};
+}
+function htmlCuota(c){
+  const bs=v=>'Bs '+Number(v||0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const us=v=>c.tasa?'$ '+(Number(v||0)/c.tasa).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
+  const cols=c.tasa?3:2, td='padding:3px 4px;', der='text-align:right;white-space:nowrap;';
+  const fila=(t,m,neg)=>'<tr style="'+(neg?'font-weight:700;':'')+'"><td style="'+td+'">'+escAttr(t)+'</td><td style="'+td+der+'">'+bs(m)+'</td>'+(c.tasa?'<td style="'+td+der+'">'+us(m)+'</td>':'')+'</tr>';
+  const titulo=t=>'<tr><td colspan="'+cols+'" style="padding:12px 4px 3px;font-weight:700;">'+t+'</td></tr>';
+  const mes=(c.mesNombre||'').toUpperCase();
+  return '<div style="background:#fff;color:#111;border:1px solid #d1d5db;border-radius:6px;padding:24px;max-width:640px;margin:0 auto;font-family:Helvetica,Arial,sans-serif;font-size:13px;">'
+   +'<div style="text-align:center;"><div style="font-size:18px;font-weight:700;">RECIBO DE CONDOMINIO</div>'
+   +'<div style="font-size:14px;font-weight:700;margin-top:4px;">'+mes+' '+c.anio+'</div>'
+   +(c.nombre?'<div style="margin-top:4px;">'+escAttr(c.nombre)+'</div>':'')
+   +'<div style="font-size:12px;margin-top:4px;">Fecha de emisión: '+c.fecha+(c.tasa?' | Tasa BCV: Bs '+Number(c.tasa).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:4})+' por USD':'')+'</div></div>'
+   +'<table style="width:100%;border-collapse:collapse;margin-top:14px;">'
+   +'<tr style="font-weight:700;border-bottom:1px solid #111;"><td style="'+td+'">Concepto</td><td style="'+td+der+'">Bs</td>'+(c.tasa?'<td style="'+td+der+'">USD</td>':'')+'</tr>'
+   +titulo('Gastos fijos')+c.fijos.map(x=>fila(x.nombre,x.monto)).join('')+fila('Total gastos fijos',c.tf,true)
+   +titulo('Gastos variables')+c.vars.map(x=>fila(x.nombre+(x.detalle?' - '+x.detalle:''),x.monto)).join('')+fila('Total gastos variables',c.tv,true)
+   +'<tr><td colspan="'+cols+'" style="height:8px;"></td></tr>'+fila('Total gastos del mes',c.tg,true)+fila('30% fondo de reserva',c.fr,true)
+   +'<tr><td colspan="'+cols+'" style="border-top:1px solid #111;height:6px;"></td></tr>'+fila('TOTAL GASTOS ('+mes+')',c.total,true)
+   +'</table></div>';
+}
+let vistaUrl=null;
+function vistaPreviaCuota(){
+  if(!cuotaDraft.fijos.length&&!cuotaDraft.vars.length) throw new Error('Agrega al menos un gasto para ver la vista previa.');
+  const c=datosCuota(), doc=pdfCuota(c);
+  if(vistaUrl) URL.revokeObjectURL(vistaUrl);
+  vistaUrl=URL.createObjectURL(doc.output('blob'));
+  g('prev-body').innerHTML=htmlCuota(c);
+  g('prev-open').href=vistaUrl;
+  g('prev-download').href=vistaUrl; g('prev-download').download='Recibo-Condominio-'+c.mesNombre+'-'+c.anio+'.pdf';
+  g('prev-overlay').style.display='flex';
+}
+function cerrarVistaPrevia(){
+  g('prev-overlay').style.display='none'; g('prev-body').innerHTML='';
+  if(vistaUrl){ URL.revokeObjectURL(vistaUrl); vistaUrl=null; }
+}
+async function guardarCuota(){
+  if(envioEnCurso) return;
+  if(!cuotaDraft.fijos.length&&!cuotaDraft.vars.length) throw new Error('Agrega al menos un gasto antes de guardar la cuota.');
+  const c=datosCuota(), mes=c.mes;
+  const porCorreo={}, sinCorreo=[];
+  deptos.slice().sort(numSort).forEach(d=>{ const e=emailPropietario(d); if(!e){ sinCorreo.push(d.numero); return; } const k=e.toLowerCase(); (porCorreo[k]=porCorreo[k]||{email:e}); });
+  const dest=Object.values(porCorreo).map(x=>x.email);
+  const enviar=correoListo()&&dest.length>0;
+  if(enviar){
+    const ok=await customConfirm('Se guardará la cuota de '+c.mesNombre+' y se enviará el PDF por correo a '+dest.length+' propietarios'+(sinCorreo.length?' ('+sinCorreo.length+' apartamentos no tienen correo y no recibirán nada)':'')+'. Los correos no se pueden deshacer. ¿Continuar?');
+    if(!ok) return;
+  }
+  envioEnCurso=true;
+  try{
+    const doc=pdfCuota(c), archivo='Recibo-Condominio-'+c.mesNombre+'-'+c.anio+'.pdf';
+    if(db) await db.collection('cuotas').doc(mes).set({mes,fecha:c.fecha,tasa:c.tasa,fijos:c.fijos,vars:c.vars,total_bs:c.total});
+    if(!enviar){
+      doc.save(archivo);
+      aviso('Cuota guardada y PDF descargado. '+(correoListo()?'Ningún propietario tiene un correo válido registrado.':'No se envió por correo porque el servicio no está configurado (Configuración > Envío de correo).'),!correoListo());
+      return;
+    }
+    const pdf=pdfBase64(doc), asunto='Recibo de condominio '+c.mesNombre+' '+c.anio;
+    const texto='Estimado(a) propietario(a):\n\nAdjuntamos el recibo de condominio correspondiente a '+c.mesNombre+' '+c.anio+'.\n\nTotal gastos del mes (incluye 30% de fondo de reserva): Bs '+Number(c.total).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})+(c.tasa?' (USD '+(c.total/c.tasa).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+')':'')+'.'+firma();
+    let enviados=0; const fallidos=[];
+    for(let i=0;i<dest.length;i+=10){
+      const lote=dest.slice(i,i+10);
+      aviso('Enviando cuota... '+Math.min(i+10,dest.length)+' de '+dest.length,true);
+      try{
+        const j=await enviarCorreo({destinatarios:lote,asunto,texto,pdf,archivo});
+        enviados+=(j.enviados||[]).length; (j.fallidos||[]).forEach(f=>fallidos.push(f));
+      }catch(err){
+        lote.forEach(to=>fallidos.push({to,error:err.message}));
+        dest.slice(i+10).forEach(to=>fallidos.push({to,error:'no se intentó porque falló un lote anterior'}));
+        break;
+      }
+    }
+    const envio={fecha:c.fecha,enviados,fallidos:fallidos.map(f=>({to:f.to||'',error:String(f.error||'')})),sin_correo:sinCorreo};
+    if(db) await db.collection('cuotas').doc(mes).update({envio});
+    aviso('Cuota guardada. PDF enviado a '+enviados+' de '+dest.length+' propietarios.'+(fallidos.length?' No se pudo enviar a: '+fallidos.map(f=>f.to).join(', ')+'. Motivo: '+String(fallidos[0].error||'')+'.':'')+(sinCorreo.length?' Sin correo registrado (apartamentos): '+sinCorreo.join(', ')+'.':''),fallidos.length===0);
+  } finally { envioEnCurso=false; }
+}
+async function guardarCorreo(){
+  const url=g('m_url').value.trim(), clave=g('m_clave').value.trim(), remitente=g('m_nombre').value.trim();
+  if(url&&!(url.startsWith('https://script.google.com/')&&url.endsWith('/exec'))) throw new Error('La URL debe ser la de la implementación web de Apps Script: empieza con https://script.google.com/ y termina en /exec.');
+  const data={url,clave,remitente};
+  if(db) await db.doc('config/correo').set(data); else { correoCfg=data; render(); }
+  aviso('Configuración de correo guardada.',true);
+}
+async function probarCorreo(){
+  if(!correoListo()) throw new Error('Primero guarda la URL y la clave del servicio de correo.');
+  if(!window.jspdf) throw new Error('No se pudo cargar el generador de PDF (revisa la conexión a internet).');
+  const to=await customPrompt('¿A qué correo envío la prueba?','');
+  if(!to) return;
+  if(!emailValido(to.trim())) throw new Error('Ese correo no es válido.');
+  const doc=new window.jspdf.jsPDF(); doc.setFontSize(14); doc.text('Prueba de correo - '+(correoCfg.remitente||'Administración del Condominio'),20,25); doc.setFontSize(11); doc.text('Si recibes este PDF, el envío automático funciona.',20,36);
+  aviso('Enviando prueba a '+to.trim()+'...',true);
+  const j=await enviarCorreo({destinatarios:[to.trim()],asunto:'Prueba de correo del sistema de condominio',texto:'Este es un correo de prueba.'+firma(),pdf:pdfBase64(doc),archivo:'prueba.pdf'});
+  if(!j.enviados||!j.enviados.length) throw new Error((j.fallidos&&j.fallidos[0]&&j.fallidos[0].error)||'el servicio no confirmó el envío');
+  aviso('Prueba enviada a '+to.trim()+'.'+(j.restantes!=null?' Envíos que quedan hoy: '+j.restantes+'.':''),true);
+}
+
+async function entregarRecibo(r){
+  const d=deptos.find(x=>x.id===r.depto_id), email=d?emailPropietario(d):'';
+  const doc=pdfRecibo(r), name=nombrePdf(r);
+  const asunto='Comprobante de pago N° '+r.numero+' - Apto '+(r.apto||''), cuerpo='Estimado(a) '+(r.propietario||'')+', le enviamos su comprobante de pago N° '+r.numero+'.';
+  if(correoListo()){
+    if(!email){ doc.save(name); aviso('Recibo guardado y PDF descargado. NO se envió correo: el propietario del apto '+(r.apto||'')+' no tiene un correo válido registrado.',false); return; }
+    aviso('Enviando el recibo a '+email+'...',true);
+    try{
+      const j=await enviarCorreo({destinatarios:[email],asunto,texto:cuerpo+firma(),pdf:pdfBase64(doc),archivo:name});
+      if(!j.enviados||!j.enviados.length) throw new Error((j.fallidos&&j.fallidos[0]&&j.fallidos[0].error)||'el servicio no confirmó el envío');
+      aviso('Recibo guardado y enviado por correo a '+email+'.',true);
+    }catch(err){
+      doc.save(name);
+      aviso('Recibo guardado, pero NO se pudo enviar el correo a '+email+': '+err.message+' Se descargó el PDF para que lo envíes manualmente.',false);
+    }
+    return;
+  }
+  const blob=doc.output('blob');
+  const file=new File([blob],name,{type:'application/pdf'});
+  if(/Android|iPhone|iPad/i.test(navigator.userAgent)&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:asunto,text:cuerpo}); return; }catch(e){ if(e&&e.name==='AbortError') return; }
+  }
+  doc.save(name);
+  if(!email){ aviso('Recibo guardado y PDF descargado. Este apartamento no tiene correo registrado.',true); return; }
+  aviso('Recibo guardado y PDF descargado. Se abrirá tu correo para '+email+': adjunta el PDF y envía.',true);
+  location.href='mailto:'+email+'?subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo+'\n\n(Adjunta el archivo '+name+' que se acaba de descargar.)');
+}
+function showRecibos(deptoId){
+  const d=deptos.find(x=>x.id===deptoId); if(!d) return;
+  g('rec-title').textContent='Recibos — Apto '+d.numero+(d.propietario?' · '+d.propietario:'');
+  const lst=recibos.filter(r=>r.depto_id===deptoId).sort((a,b)=>String(b.numero).localeCompare(String(a.numero)));
+  g('rec-body').innerHTML=lst.length?'<div class="tablewrap"><table><tr><th>N°</th><th>Fecha</th><th>Total</th><th>Referencia</th><th></th></tr>'+lst.map(r=>`<tr><td>${r.numero}</td><td>${r.fecha||''}</td><td>$${Number(r.total_usd||0).toFixed(2)} <small>Bs ${Number(r.total_bs||0).toLocaleString('es-VE',{minimumFractionDigits:2})}</small></td><td>${r.referencia||''}</td><td><button class="small" data-rec-pdf="${r.id}">PDF</button> <button class="small" data-rec-mail="${r.id}">Enviar por correo</button></td></tr>`).join('')+'</table></div>':'<p class="empty">Este apartamento aún no tiene recibos</p>';
+  g('rec-overlay').style.display='flex';
+}
+function proxRecibo(){ const n=recibos.map(r=>parseInt(r.numero)).filter(x=>x>=0); return n.length?String(Math.max(...n)+1).padStart(4,'0'):''; }
+function renderRecibo(){
+  return `<div class="card" id="recibo" data-enter="[data-action='save-recibo']"><h3 style="text-align:center">COMPROBANTE DE PAGO</h3>
+  <div class="row"><div><label>Recibo N°</label><input id="r_num" value="${proxRecibo()}"></div><div><label>Fecha de pago</label><input id="r_fecha" type="date" value="${new Date().toISOString().slice(0,10)}"></div></div>
+  <div class="row"><div><label>Apto</label><select id="r_apto"><option value="">—</option>${deptos.slice().sort(numSort).map(d=>`<option value="${d.id}">${d.numero}</option>`).join('')}</select></div><div><label>Propietario</label><input id="r_prop"></div></div>
+  <div class="row"><div style="flex:0 0 80px;min-width:0"><label>Moneda</label><select id="r_mon"><option>Bs</option><option>USD</option></select></div><div><label>Monto</label><input id="r_monto" type="number" step="0.01" placeholder="0.00"></div><div><label>Tasa del día (Bs/USD)</label><input id="r_tasa" type="number" step="0.0001" value="${tasa||''}"></div><div><label>Referencia</label><input id="r_ref"></div></div>
+  <div class="row"><div><label>Tipo de transacción</label><select id="r_tipo"><option>Transferencia</option><option>Pago móvil</option><option>Zelle</option><option>Efectivo</option><option>Depósito</option></select></div><div><label>Banco emisor</label><input id="r_banco"></div></div>
+  <label>Detalle</label><div id="r_lineas">${lineaHtml()}</div><button class="small" data-action="add-linea">+ Línea</button>
+  <label style="display:block;margin-top:8px">Observaciones</label><input id="r_obs">
+  <label style="display:block;margin-top:8px"><input type="checkbox" id="r_aplicar" checked style="width:auto;margin-right:6px">Aplicar este pago al historial del apartamento y al saldo del banco (el total en USD se reparte solo)</label>
+  <p id="r_tot"><b>Total:</b></p>
+  <div class="row"><button class="primary" data-action="save-recibo">Guardar recibo y enviar PDF al propietario</button><button class="small" data-action="print">Imprimir</button></div></div>`;
+}
+function calcRecibo(){
+  const mon=g('r_mon').value, t=Number(g('r_tasa').value)||0;
+  const s=Number(g('r_monto').value)||0;
+  const usd=mon==='USD'?s:(t?s/t:0), bs=mon==='Bs'?s:s*t;
+  g('r_tot').innerHTML='<b>Total:</b> Bs '+bs.toLocaleString('es-VE',{minimumFractionDigits:2})+' · USD '+usd.toFixed(2);
+  return {usd,bs};
+}
+async function guardarRecibo(){
+  if(envioEnCurso) return;
+  envioEnCurso=true;
+  try{ await guardarReciboInterno(); } finally { envioEnCurso=false; }
+}
+async function guardarReciboInterno(){
+  const t=calcRecibo(), d=deptos.find(x=>x.id===g('r_apto').value);
+  const data={numero:g('r_num').value.trim(),fecha:g('r_fecha').value,depto_id:d?d.id:'',apto:d?d.numero:'',propietario:g('r_prop').value.trim(),moneda:g('r_mon').value,tasa:Number(g('r_tasa').value)||0,monto:Number(g('r_monto').value)||0,referencia:g('r_ref').value.trim(),tipo:g('r_tipo').value,banco:g('r_banco').value.trim(),observaciones:g('r_obs').value.trim(),
+    detalle:[...document.querySelectorAll('.r_d')].map(i=>i.value.trim()).filter(Boolean),total_usd:t.usd,total_bs:t.bs};
+  if(!d) throw new Error('Elige el apartamento.');
+  if(!data.numero||!data.total_usd) throw new Error('Falta el N° de recibo o el monto (si eliges Bs, indica también la tasa del día).');
+  if(g('r_aplicar').checked) await aplicarPago(d.id,data.total_usd,data.fecha,'Recibo '+data.numero);
+  if(db){ const ref=await db.collection('recibos').add(data); data.id=ref.id; } else { data.id='loc-'+Date.now(); recibos.push(data); }
+  render();
+  try{ await entregarRecibo(data); }catch(err){ aviso('Recibo guardado, pero falló el PDF/correo: '+err.message,false); }
+}
+
+function renderNoticias(){ return `<div class="card"><h3>Noticias</h3><p class="tag">Próximamente: aquí configuraremos la vista de noticias.</p></div>`; }
+function render(){
+  const app=document.getElementById('app');
+  if(currentTab==='resumen') app.innerHTML=renderResumen();
+  else if(currentTab==='noticias') app.innerHTML=renderNoticias();
+  else if(currentTab==='deptos') app.innerHTML=renderDeptos();
+  else if(currentTab==='movs') app.innerHTML=renderMovs();
+  else if(currentTab==='cuota') app.innerHTML=renderCuota();
+  else if(currentTab==='recibo') app.innerHTML=renderRecibo();
+  else app.innerHTML=renderConfig();
+}
+
+// Fondo de emergencia (saldo acumulado, en USD):
+//   saldo inicial
+//   + parte del fondo dentro de cada cuota pagada: la cuota es gastos + 30%, así que 30/130 de cada pago va al fondo
+//   + ingresos registrados manualmente con categoría "Fondo de emergencia"
+//   - egresos/gastos registrados con categoría "Fondo de emergencia"
+const FONDO_PCT=0.30;
+function fondoEmergencia(){
+  const suma=f=>movs.filter(f).reduce((a,m)=>a+Number(m.monto||0),0);
+  const deCuotas=suma(m=>m.tipo==='ingreso'&&m.categoria==='Cuota de condominio')*FONDO_PCT/(1+FONDO_PCT);
+  const aportes=suma(m=>m.tipo==='ingreso'&&m.categoria==='Fondo de emergencia');
+  const usos=suma(m=>(m.tipo==='egreso'||m.tipo==='gasto')&&m.categoria==='Fondo de emergencia');
+  return Number(config.fondo_inicial_usd||0)+deCuotas+aportes-usos;
+}
+function usdFondoIni(bs){
+  if(!bs) return 0;
+  if(bs===Number(config.fondo_inicial_bs||0)) return Number(config.fondo_inicial_usd||0);
+  return tasa?Math.round(bs/tasa*100)/100:null;
+}
+function textoFondoIni(bs){ const u=usdFondoIni(bs); return u==null?'(falta la tasa BCV)':'≈ $'+u.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function actualizarFondoIni(){ const el=g('f_fondo_ini_usd'); if(el) el.textContent=textoFondoIni(Number(g('f_fondo_ini').value)||0); }
+function renderResumen(){
+  const mes=mesActual();
+  const {ing,egr}=totalesMes(mes);
+  const enMora = deptos.filter(d=>meses6().some(m=>!pagadoMes(d.id,m))).length;
+  const pctMora = deptos.length ? Math.round((enMora/deptos.length)*100) : 0;
+  const cuota = cuotaSugerida();
+  const deudaApartamentos = deptos.reduce((a,d)=>a+deudaDepto(d.id),0);
+  const colorMora = pctMora>70 ? '#b91c1c' : (pctMora>=30 ? '#c2410c' : '#15803d');
+  let rows = deptos.slice().sort((a,b)=>(a.numero||'').localeCompare(b.numero||'',undefined,{numeric:true})).map(d=>{
+    const pago = !meses6().some(m=>!pagadoMes(d.id,m));
+    const estado = pago ? '<span class="badge ok">Al día</span>' : '<span class="badge warn">En mora</span>';
+    const esArr = d.ocupante_tipo === 'arrendatario';
+    const residente = (esArr && d.arrendatario_nombre) ? d.arrendatario_nombre : (d.propietario||'');
+    return `<tr><td>${d.numero}</td><td>${residente}</td><td>${fmt(deudaDepto(d.id))}</td><td>${semaforo(d.id)}</td><td>${estado}</td></tr>`;
+  }).join('');
+  if(!deptos.length) rows = '<tr><td colspan="4" class="empty">Aún no hay apartamentos</td></tr>';
+  return `<div class="gridstats">
+    <div class="stat"><div class="v">${fmt(saldoBanco())}</div><div class="l">Saldo en banco</div></div>
+    <div class="stat"><div class="v" style="color:#15803d;">${fmt(ing)}</div><div class="l">Ingresos este mes</div></div>
+    <div class="stat"><div class="v" style="color:#b91c1c;">${fmt(egr)}</div><div class="l">Egresos este mes</div></div>
+    <div class="stat"><div class="v" style="color:${colorMora};">${enMora} / ${deptos.length} (${pctMora}%)</div><div class="l">Aptos en mora</div></div>
+    <div class="stat"><div class="v">${fmt(deudaApartamentos)}</div><div class="l">Deuda actual del condominio (cuotas atrasadas)</div></div>
+    <div class="stat"><div class="v">${fondoEmergencia()==null?'—':fmt(fondoEmergencia())}</div><div class="l">Fondo de emergencia <small>(saldo acumulado)</small></div></div>
+  </div>
+  <div class="card tablewrap"><table><tr><th>Apto</th><th>Residente</th><th>Deuda</th><th>Últimos 6 meses</th><th>Estado</th></tr>${rows}</table></div>`;
+}
+
+function renderDeptos(){
+  const mes=mesActual();
+  let rows = deptos.slice().sort((a,b)=>(a.numero||'').localeCompare(b.numero||'',undefined,{numeric:true})).map(d=>{
+    const pago = deudaDepto(d.id)<=0;
+    const estado = pago ? '<span class="badge ok">Al día</span>' : '<span class="badge warn">En mora</span>';
+    const esArr = d.ocupante_tipo === 'arrendatario';
+    let contactoLinea = '';
+    if(d.tel) contactoLinea += d.tel;
+    if(d.email) contactoLinea += (contactoLinea?'<br>':'') + d.email;
+    if(esArr && (d.tel_dueno || d.email_dueno)) contactoLinea += '<br><span class="tag">Dueño: '+(d.tel_dueno||'')+' '+(d.email_dueno||'')+'</span>';
+    return `<tr>
+      <td>${d.numero}</td>
+      <td>${d.propietario||''}${esArr && d.arrendatario_nombre ? '<br><span class="tag">Arrendatario: '+d.arrendatario_nombre+'</span>' : ''}<br><button class="small" data-action="ver-historial" data-id="${d.id}" style="margin-top:4px;">Historial</button></td>
+      <td>${contactoLinea}</td>
+      <td>${estado}</td>
+      <td><button class="small" data-action="ver-recibos" data-id="${d.id}">Ver recibos</button></td>
+    </tr>`;
+  }).join('');
+  if(!deptos.length) rows = '<tr><td colspan="5" class="empty">Aún no hay apartamentos — agrégalos en Configuración</td></tr>';
+  return `<div class="card tablewrap"><table>
+    <tr><th>Apto</th><th>Ocupante</th><th>Contacto</th><th>Estado (${mes})</th><th>Recibos</th></tr>
+    ${rows}
+  </table></div>`;
+}
+
+function renderFormDepto(editing){
+  return `<div class="subcard" data-enter="[data-action='save-depto']">
+    <div class="row">
+      <div><label>Número/Identificador</label><input id="f_numero" value="${editing?editing.numero:''}" ${editing?'disabled':''} placeholder="Ej: 302"></div>
+      <div><label>Nombre del propietario</label><input id="f_propietario" value="${editing?(editing.propietario||''):''}" placeholder="Nombre del dueño"></div>
+    </div>
+    <label>¿Quién ocupa el apartamento?</label>
+    <select id="f_ocupante_tipo">
+      <option value="propietario" ${editing && editing.ocupante_tipo!=='arrendatario'?'selected':''}>El propietario</option>
+      <option value="arrendatario" ${editing && editing.ocupante_tipo==='arrendatario'?'selected':''}>Un arrendatario</option>
+    </select>
+    <div id="f_arrendatario_wrap" class="${editing && editing.ocupante_tipo==='arrendatario'?'':'hidden'}">
+      <label>Nombre del arrendatario</label><input id="f_arrendatario_nombre" value="${editing?(editing.arrendatario_nombre||''):''}" placeholder="Nombre">
+    </div>
+    <div class="row">
+      <div><label>Teléfono de contacto</label><input id="f_tel" value="${editing?(editing.tel||''):''}" placeholder="Teléfono"></div>
+      <div><label>Email de contacto</label><input id="f_email" value="${editing?(editing.email||''):''}" placeholder="correo@ejemplo.com"></div>
+    </div>
+    <div id="f_dueno_contacto_wrap" class="${editing && editing.ocupante_tipo==='arrendatario'?'':'hidden'}">
+      <div class="row">
+        <div><label>Teléfono del dueño</label><input id="f_tel_dueno" value="${editing?(editing.tel_dueno||''):''}" placeholder="Teléfono del dueño"></div>
+        <div><label>Correo del dueño</label><input id="f_email_dueno" value="${editing?(editing.email_dueno||''):''}" placeholder="correo@ejemplo.com"></div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="primary" data-action="save-depto">${editing?'Guardar cambios':'Agregar'}</button>
+      <button class="small" data-action="cancel-edit">Cancelar</button>
+    </div>
+  </div>`;
+}
+
+function renderGestionSection(){
+  const editing = deptos.find(d=>d.id===editingDeptoId);
+  const formVisible = showAddForm || !!editing;
+  let rows = deptos.slice().sort((a,b)=>(a.numero||'').localeCompare(b.numero||'',undefined,{numeric:true})).map(d=>`<tr>
+      <td>${d.numero}</td>
+      <td>${d.propietario||''}${d.ocupante_tipo==='arrendatario' && d.arrendatario_nombre ? '<br><span class="tag">Arrendatario: '+d.arrendatario_nombre+'</span>':''}</td>
+      <td><button class="small" data-action="edit-depto" data-id="${d.id}">Editar</button> <button class="small danger" data-action="del-depto" data-id="${d.id}">Eliminar</button></td>
+    </tr>`).join('');
+  if(!deptos.length) rows='<tr><td colspan="3" class="empty">Aún no hay apartamentos</td></tr>';
+  return `<div class="card">
+    <h3>Apartamentos</h3>
+    <div class="row" style="margin-bottom:4px;">
+      <button class="small" data-action="importar-directorio">Importar directorio (58 aptos)</button>
+      <button class="small danger" data-action="restaurar-directorio">Eliminar todos y restaurar los 58 originales</button>
+      ${!formVisible ? '<button class="small" data-action="toggle-add-depto">+ Agregar apartamento</button>' : ''}
+    </div>
+    ${importStatusMsg?`<p class="tag">${importStatusMsg}</p>`:''}
+    ${formVisible ? renderFormDepto(editing) : ''}
+    <div class="tablewrap" style="margin-top:12px;"><table><tr><th>Apto</th><th>Ocupante</th><th></th></tr>${rows}</table></div>
+  </div>`;
+}
+
+function renderSubcatField(categoria){
+  const opts = SUBCATS[categoria];
+  if(opts) return `<label>Subcategoría</label><select id="f_subcategoria">${opts.map(o=>'<option>'+o+'</option>').join('')}</select>`;
+  return `<label>Subcategoría (opcional)</label><input id="f_subcategoria" placeholder="Detalle específico">`;
+}
+
+function renderMovs(){
+  let rows = movs.slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')).map(m=>`<tr>
+      <td>${m.fecha||''}</td>
+      <td><span class="badge ${m.tipo==='ingreso'?'ok':'warn'}">${m.tipo}</span></td>
+      <td>${m.categoria||''}${m.subcategoria? ' — '+m.subcategoria:''}</td>
+      <td>${m.descripcion||''}</td>
+      <td>${m.doc_numero?(m.doc_tipo||'Doc.')+' N° '+m.doc_numero:''}</td>
+      <td>${fmtMov(m)}</td>
+      <td><button class="small danger" data-action="del-mov" data-id="${m.id}">Eliminar</button></td>
+    </tr>`).join('');
+  if(!movs.length) rows='<tr><td colspan="7" class="empty">Sin movimientos</td></tr>';
+  return `<div class="card" data-enter="[data-action='add-mov']">
+    <h3>Registrar movimiento</h3>
+    <div class="row">
+      <div><label>Tipo</label><select id="f_tipo"><option value="egreso">Egreso</option><option value="ingreso">Ingreso</option><option value="gasto">Gasto</option></select></div>
+      <div><label>Categoría</label><select id="f_categoria">
+        <option>Servicios públicos</option><option>Proveedores</option><option>Pago a trabajadores</option>
+        <option>Fondo de emergencia</option><option>Cuota de condominio</option><option>Otro</option>
+      </select></div>
+    </div>
+    <div id="subcat_wrap">${renderSubcatField('Servicios públicos')}</div>
+    <div id="doc_wrap"><div class="row">
+      <div><label>Documento</label><select id="f_doc_tipo"><option>Factura</option><option>Recibo</option><option>Nota de entrega</option></select></div>
+      <div><label>N° de factura, recibo o nota de entrega</label><input id="f_doc_num" placeholder="Ej: 000123"></div>
+    </div></div>
+    <div class="row">
+      <div><label>Monto (Bs)</label><div style="display:flex;align-items:flex-start;gap:8px;"><input id="f_monto" type="number" step="0.01" placeholder="0.00" style="flex:1;min-width:0;"><small class="usd-amt" id="f_monto_usd" style="white-space:nowrap;padding-top:9px;">${textoMontoUsd(0)}</small></div></div>
+      <div><label>Fecha</label><input id="f_fecha" type="date" value="${hoyLocal()}"></div>
+    </div>
+    <label>Descripción</label><input id="f_desc" placeholder="Detalle">
+    <button class="primary" data-action="add-mov">Registrar</button>
+  </div>
+  <div class="card tablewrap"><table>
+    <tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Detalle</th><th>Documento</th><th>Monto</th><th></th></tr>${rows}
+  </table></div>`;
+}
+
+function renderConfig(){
+  return `<div class="card" data-enter="[data-action='save-config']">
+    <h3>Configuración general</h3>
+    <label>¿Cómo calcular la cuota mensual?</label>
+    <select id="f_modo_cuota">
+      <option value="manual" ${config.usar_cuota_manual?'selected':''}>La defino yo manualmente</option>
+      <option value="auto" ${!config.usar_cuota_manual?'selected':''}>Calcularla automático (egresos del mes ÷ apartamentos)</option>
+    </select>
+    <div id="f_cuota_manual_wrap" class="${config.usar_cuota_manual?'':'hidden'}">
+      <label>Monto de la cuota mensual</label>
+      <input id="f_cuota_manual" type="number" step="0.01" value="${config.cuota_manual||0}">
+    </div>
+    <label>Saldo inicial en banco (antes de usar esta app)</label>
+    <input id="f_saldo" type="number" step="0.01" value="${config.saldo_inicial||0}">
+    <label>Aporte mensual a fondo de emergencia (opcional, 0 si no aplica)</label>
+    <input id="f_fondo" type="number" step="0.01" value="${config.fondo_emergencia||0}">
+    <label>Saldo inicial del fondo de emergencia: lo que ya había ahorrado antes de usar esta app (Bs)</label>
+    <div style="display:flex;align-items:flex-start;gap:8px;"><input id="f_fondo_ini" type="number" step="0.01" value="${config.fondo_inicial_bs||0}" style="flex:1;min-width:0;"><small class="usd-amt" id="f_fondo_ini_usd" style="white-space:nowrap;padding-top:9px;">${textoFondoIni(Number(config.fondo_inicial_bs)||0)}</small></div>
+    <label>Pasivos/deudas del edificio con terceros (proveedores, servicios) — se usará en una tarjeta aparte próximamente</label>
+    <input id="f_deuda" type="number" step="0.01" value="${config.deuda_actual||0}">
+    <button class="primary" data-action="save-config">Guardar</button>
+  </div>
+  <div class="card" data-enter="[data-action='save-correo']">
+    <h3>Envío de correo (PDF)</h3>
+    <p class="tag">Permite que "Guardar recibo" y "Guardar cuota" envíen el PDF por correo automáticamente. Requiere crear un pequeño servicio en Google Apps Script (te lo indico aparte).</p>
+    <label>URL del servicio de correo (termina en /exec)</label>
+    <input id="m_url" value="${escAttr(correoCfg.url)}" placeholder="https://script.google.com/macros/s/.../exec">
+    <label>Clave de seguridad (la misma que escribiste en el script)</label>
+    <input id="m_clave" type="password" autocomplete="off" value="${escAttr(correoCfg.clave)}">
+    <label>Nombre del condominio / remitente (aparece en el correo y en el PDF de la cuota)</label>
+    <input id="m_nombre" value="${escAttr(correoCfg.remitente)}" placeholder="Ej: Administración Conjunto Residencial El Guayabal">
+    <div class="row"><button class="primary" data-action="save-correo">Guardar</button><button class="small" data-action="test-correo">Enviar correo de prueba</button></div>
+    <p class="tag">${correoListo()?'Servicio configurado: los recibos y cuotas se envían solos por correo.':'Sin configurar: los recibos se descargan y se abre tu correo para adjuntar el PDF a mano.'}</p>
+  </div>
+  ${renderGestionSection()}`;
+}
+
+function datosFormDepto(){
+  return {
+    numero: document.getElementById('f_numero').value.trim(),
+    propietario: document.getElementById('f_propietario').value.trim(),
+    ocupante_tipo: document.getElementById('f_ocupante_tipo').value,
+    arrendatario_nombre: document.getElementById('f_arrendatario_nombre').value.trim(),
+    tel: document.getElementById('f_tel').value.trim(),
+    email: document.getElementById('f_email').value.trim(),
+    tel_dueno: document.getElementById('f_tel_dueno').value.trim(),
+    email_dueno: document.getElementById('f_email_dueno').value.trim()
+  };
+}
+
+async function guardarDepto(){
+  const data = datosFormDepto();
+  if(!data.numero) return;
+  if(editingDeptoId){
+    if(db) await db.collection('departamentos').doc(editingDeptoId).set(data);
+    else { const d=deptos.find(x=>x.id===editingDeptoId); if(d) Object.assign(d,data); }
+    editingDeptoId=null; showAddForm=false; render();
+    return;
+  }
+  if(db) await db.collection('departamentos').add(data);
+  else { addLocal(deptos, data); }
+  showAddForm=false; render();
+}
+async function borrarDepto(id){
+  const ok = await customConfirm('¿Eliminar este apartamento?');
+  if(!ok) return;
+  if(db) await db.collection('departamentos').doc(id).delete();
+  else { removeLocal(deptos, id); render(); }
+}
+async function registrarPago(deptoId){
+  const mes=mesActual();
+  const d = deptos.find(x=>x.id===deptoId);
+  const monto = Number(cuotaSugerida().toFixed(2));
+  const ok = await customConfirm('¿Confirmar pago realizado — Apto '+(d?d.numero:'')+' ('+fmt(monto)+')?');
+  if(!ok) return;
+  const fecha = new Date().toISOString().slice(0,10);
+  const pagoData = { depto_id:deptoId, mes, monto, fecha_pago:fecha, estado:'pagado' };
+  const movData = { tipo:'ingreso', categoria:'Cuota de condominio', subcategoria:'', monto, descripcion:'Pago de cuota — Apto '+(d?d.numero:''), fecha };
+  const existente = registroDelMes(deptoId, mes);
+  if(db){
+    if(existente) await db.collection('pagos').doc(existente.id).set(pagoData);
+    else await db.collection('pagos').add(pagoData);
+    await db.collection('movimientos').add(movData);
+  } else {
+    if(existente) Object.assign(existente, pagoData);
+    else addLocal(pagos, pagoData);
+    addLocal(movs, movData);
+    render();
+  }
+}
+function hoyLocal(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function textoMontoUsd(bs){ return tasa ? '≈ $'+(bs/tasa).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '(falta la tasa BCV)'; }
+function actualizarMontoUsd(){ const el=g('f_monto_usd'); if(el) el.textContent=textoMontoUsd(Number(g('f_monto').value)||0); }
+function fmtMov(m){
+  if(m.monto_bs==null) return fmt(m.monto);
+  return 'Bs '+Number(m.monto_bs).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2})+' <small class="usd-amt">$'+Number(m.monto).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'</small>';
+}
+async function agregarMov(){
+  const bs=Number(document.getElementById('f_monto').value);
+  if(!bs) return;
+  if(!tasa) throw new Error('Falta la tasa BCV para convertir el monto de Bs a USD. Tócala en el reloj de arriba a la derecha y escríbela.');
+  const tipoMov=document.getElementById('f_tipo').value;
+  const docNum=(tipoMov==='egreso'||tipoMov==='gasto')?g('f_doc_num').value.trim():'';
+  const data = {
+    tipo:tipoMov,
+    doc_tipo:docNum?g('f_doc_tipo').value:'', doc_numero:docNum,
+    categoria:document.getElementById('f_categoria').value,
+    subcategoria:(document.getElementById('f_subcategoria')||{}).value || '',
+    monto:Math.round(bs/tasa*100)/100, monto_bs:bs, tasa,
+    descripcion:document.getElementById('f_desc').value.trim(),
+    fecha:document.getElementById('f_fecha').value || hoyLocal()
+  };
+  if((tipoMov==='egreso'||tipoMov==='gasto')&&data.categoria==='Fondo de emergencia'){
+    const saldoFondo=fondoEmergencia();
+    if(data.monto>saldoFondo+0.005){
+      const ok=await customConfirm('El fondo de emergencia tiene $'+saldoFondo.toFixed(2)+' y este gasto es de $'+data.monto.toFixed(2)+'. Quedaría en negativo. ¿Registrarlo de todas formas?');
+      if(!ok) return;
+    }
+  }
+  if(db) await db.collection('movimientos').add(data);
+  else { addLocal(movs, data); render(); }
+}
+async function borrarMov(id){
+  const ok = await customConfirm('¿Eliminar este movimiento?');
+  if(!ok) return;
+  if(db) await db.collection('movimientos').doc(id).delete();
+  else { removeLocal(movs, id); render(); }
+}
+async function guardarConfig(){
+  const saldo_inicial=Number(document.getElementById('f_saldo').value)||0;
+  const fondo_emergencia=Number(document.getElementById('f_fondo').value)||0;
+  const deuda_actual=Number(document.getElementById('f_deuda').value)||0;
+  const usar_cuota_manual = document.getElementById('f_modo_cuota').value==='manual';
+  const cuota_manual = Number((document.getElementById('f_cuota_manual')||{}).value)||0;
+  const bsIni=Number(document.getElementById('f_fondo_ini').value)||0;
+  const usdIni=usdFondoIni(bsIni);
+  if(usdIni==null) throw new Error('Falta la tasa BCV para convertir el saldo inicial del fondo de Bs a USD. Tócala en el reloj de arriba a la derecha y escríbela.');
+  const cambio=bsIni!==Number(config.fondo_inicial_bs||0);
+  const data = {saldo_inicial, fondo_emergencia, deuda_actual, usar_cuota_manual, cuota_manual,
+    fondo_inicial_bs:bsIni, fondo_inicial_usd:usdIni, fondo_inicial_tasa:cambio?(tasa||0):Number(config.fondo_inicial_tasa||0)};
+  if(db) await db.doc('config/general').set(data);
+  else { config = data; render(); }
+}
+
+function aplicarPaleta(p){
+  document.documentElement.setAttribute('data-palette',p);
+  document.querySelectorAll('.sw').forEach(b=>b.classList.toggle('sel',b.dataset.palettePick===p));
+  try{ localStorage.setItem('condo_paleta',p); }catch(e){}
+}
+document.querySelector('.swatches').addEventListener('click',e=>{ const b=e.target.closest('[data-palette-pick]'); if(b) aplicarPaleta(b.dataset.palettePick); });
+aplicarPaleta(document.documentElement.getAttribute('data-palette')||'azul-verde');
+
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Enter') return;
+  const t = e.target;
+  if(!t || t.tagName !== 'INPUT') return;
+  const wrap = t.closest('[data-enter]');
+  if(!wrap) return;
+  e.preventDefault();
+  const btn = document.querySelector(wrap.getAttribute('data-enter'));
+  if(btn) btn.click();
+});
+
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-tab]'); if(!b) return;
+  currentTab=b.dataset.tab; editingDeptoId=null; showAddForm=false;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active',x===b));
+  render();
+});
+
+const appEl = document.getElementById('app');
+appEl.addEventListener('input',e=>{ if(e.target.closest('#recibo')) calcRecibo(); if(e.target.id==='f_monto') actualizarMontoUsd(); if(e.target.id==='f_fondo_ini') actualizarFondoIni(); });
+appEl.addEventListener('click', async e=>{
+  const b = e.target.closest('[data-action]');
+  if(!b) return;
+  const action=b.dataset.action, id=b.dataset.id;
+  document.getElementById('error-banner').classList.add('hidden');
+  try{
+    if(action==='save-depto') await guardarDepto();
+    else if(action==='del-depto') await borrarDepto(id);
+    else if(action==='edit-depto'){ editingDeptoId=id; showAddForm=false; render(); }
+    else if(action==='cancel-edit'){ editingDeptoId=null; showAddForm=false; render(); }
+    else if(action==='toggle-add-depto'){ showAddForm=true; render(); }
+    else if(action==='importar-directorio') await importarDirectorio();
+    else if(action==='restaurar-directorio') await restaurarDirectorioOriginal();
+    else if(action==='ver-recibos') showRecibos(id);
+    else if(action==='ver-historial'){ histPago=false; showHistorial(id,HISTORIAL_EDITABLE); }
+    else if(action==='add-mov') await agregarMov();
+    else if(action==='del-mov') await borrarMov(id);
+    else if(action==='save-config') await guardarConfig();
+    else if(action==='add-fijo'){ const m=Number(g('c_fijo_m').value); if(m){ cuotaDraft.fijos.push({nombre:g('c_fijo').value,monto:m}); render(); } }
+    else if(action==='add-var'){ const m=Number(g('c_var_m').value); if(m){ cuotaDraft.vars.push({nombre:g('c_prov').value.trim(),detalle:g('c_det').value.trim(),monto:m}); render(); } }
+    else if(action==='del-cuota'){ cuotaDraft[b.dataset.k].splice(Number(id),1); render(); }
+    else if(action==='save-cuota') await guardarCuota();
+    else if(action==='vista-previa-cuota') vistaPreviaCuota();
+    else if(action==='save-correo') await guardarCorreo();
+    else if(action==='test-correo') await probarCorreo();
+    else if(action==='add-linea') g('r_lineas').insertAdjacentHTML('beforeend',lineaHtml());
+    else if(action==='save-recibo') await guardarRecibo();
+    else if(action==='print') window.print();
+  }catch(err){
+    aviso('Error: '+(err&&err.message?err.message:String(err)),false);
+  }
+});
+appEl.addEventListener('change', e=>{
+  if(e.target.id==='f_ocupante_tipo'){
+    const v=e.target.value;
+    document.getElementById('f_arrendatario_wrap').classList.toggle('hidden', v!=='arrendatario');
+    document.getElementById('f_dueno_contacto_wrap').classList.toggle('hidden', v!=='arrendatario');
+  }
+  if(e.target.id==='f_tipo'){
+    document.getElementById('doc_wrap').classList.toggle('hidden', e.target.value==='ingreso');
+  }
+  if(e.target.id==='f_categoria'){
+    document.getElementById('subcat_wrap').innerHTML = renderSubcatField(e.target.value);
+  }
+  if(e.target.id==='r_apto'){ const d=deptos.find(x=>x.id===e.target.value); g('r_prop').value=d?(d.propietario||''):''; }
+  if(e.target.id==='f_modo_cuota'){
+    document.getElementById('f_cuota_manual_wrap').classList.toggle('hidden', e.target.value!=='manual');
+  }
+});
+
+document.getElementById('hist-close').addEventListener('click', ()=>{ document.getElementById('hist-overlay').style.display='none'; });
+
+async function marcarMesHistorial(estado){
+  const mesVal = document.getElementById('hist-add-mes').value;
+  if(!mesVal || !histDeptoId) return;
+  const montoInput = Number(document.getElementById('hist-add-monto').value)||0;
+  if(montoInput<=0){ alert('Ingresa el monto de la cuota de ese mes.'); return; }
+  const data = estado==='pagado'
+    ? { depto_id:histDeptoId, mes:mesVal, estado:'pagado', monto:montoInput, fecha_pago:mesVal+'-01' }
+    : { depto_id:histDeptoId, mes:mesVal, estado:'mora', monto:montoInput, fecha_pago:'' };
+  const existente = registroDelMes(histDeptoId, mesVal);
+  if(db){
+    if(existente) await db.collection('pagos').doc(existente.id).set(data);
+    else await db.collection('pagos').add(data);
+  } else {
+    if(existente) Object.assign(existente, data);
+    else addLocal(pagos, data);
+    render();
+  }
+  if(histPago && estado==='pagado'){
+    const dd=deptos.find(x=>x.id===histDeptoId);
+    const mv={tipo:'ingreso',categoria:'Cuota de condominio',subcategoria:'',monto:montoInput,descripcion:'Pago cuota '+mesVal+' — Apto '+(dd?dd.numero:''),fecha:new Date().toISOString().slice(0,10)};
+    if(db) await db.collection('movimientos').add(mv); else addLocal(movs,mv);
+  }
+  document.getElementById('hist-add-mes').value='';
+  document.getElementById('hist-add-monto').value='';
+  document.getElementById('hist-add-mes-label').textContent='Ningún mes elegido';
+  showHistorial(histDeptoId);
+}
+document.getElementById('hist-add-pagado').addEventListener('click', ()=>marcarMesHistorial('pagado'));
+document.getElementById('hist-add-mora').addEventListener('click', ()=>marcarMesHistorial('mora'));
+document.getElementById('hist-add-mes-btn').addEventListener('click', ()=>{
+  const inp = document.getElementById('hist-add-mes');
+  if(inp.showPicker){ try{ inp.showPicker(); return; }catch(e){} }
+  inp.focus(); inp.click();
+});
+document.getElementById('hist-add-mes').addEventListener('change', e=>{
+  const v=e.target.value;
+  const label=document.getElementById('hist-add-mes-label');
+  if(!v){ label.textContent='Ningún mes elegido'; return; }
+  const [y,m]=v.split('-');
+  const nombres=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  label.textContent = nombres[Number(m)-1]+' '+y;
+});
+g('pago-aplicar').addEventListener('click', async ()=>{
+  try{
+    const x=Number(g('pago-monto').value); if(!(x>0)){ alert('Ingresa el monto recibido.'); return; }
+    const d=deptos.find(z=>z.id===histDeptoId);
+    await aplicarPago(histDeptoId,x,g('pago-fecha').value||new Date().toISOString().slice(0,10),'Apto '+(d?d.numero:''));
+    g('pago-monto').value=''; showHistorial(histDeptoId);
+  }catch(err){ const eb=g('error-banner'); eb.textContent='Error: '+(err&&err.message?err.message:String(err)); eb.classList.remove('hidden'); document.getElementById('hist-overlay').style.display='none'; }
+});
+g('rec-close').addEventListener('click',()=>{ g('rec-overlay').style.display='none'; });
+g('prev-close').addEventListener('click',cerrarVistaPrevia);
+g('prev-overlay').addEventListener('click',e=>{ if(e.target===g('prev-overlay')) cerrarVistaPrevia(); });
+g('rec-body').addEventListener('click', async e=>{
+  const p=e.target.closest('[data-rec-pdf]'), q=e.target.closest('[data-rec-mail]'); const b=p||q; if(!b) return;
+  const r=recibos.find(x=>x.id===(p?b.dataset.recPdf:b.dataset.recMail)); if(!r) return;
+  g('rec-overlay').style.display='none';
+  try{ if(p) pdfRecibo(r).save(nombrePdf(r)); else await entregarRecibo(r); }catch(err){ aviso('Error: '+err.message,false); }
+});
+document.getElementById('hist-body').addEventListener('click', async e=>{
+  const b = e.target.closest('[data-hist-del]'); if(!b) return;
+  const id = b.dataset.histDel;
+  const ok = await customConfirm('¿Eliminar este registro del historial?');
+  if(!ok) return;
+  if(db) await db.collection('pagos').doc(id).delete();
+  else { removeLocal(pagos, id); render(); }
+  showHistorial(histDeptoId);
+});
+
+(async function init(){
+  cargarTasa();
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  }catch(e){ db=null; }
+  if(!db){
+    offline = true;
+    document.getElementById('demo-banner').classList.remove('hidden');
+    deptos = [
+      {id:'demo-1', numero:'101', propietario:'María Pérez', ocupante_tipo:'propietario', tel:'0412-1234567', email:'maria@ejemplo.com'},
+      {id:'demo-2', numero:'202', propietario:'Carlos Gómez', ocupante_tipo:'arrendatario', arrendatario_nombre:'Ana Rojas', tel:'0424-9876543', email:'ana@ejemplo.com', tel_dueno:'0414-1112223', email_dueno:'carlos@ejemplo.com'}
+    ];
+    movs = [
+      {tipo:'egreso', categoria:'Servicios públicos', subcategoria:'Corpoelec', monto:150, descripcion:'Electricidad del mes', fecha:mesActual()+'-05'},
+      {tipo:'egreso', categoria:'Pago a trabajadores', subcategoria:'Conserje', monto:80, descripcion:'Sueldo quincenal', fecha:mesActual()+'-10'}
+    ].map((m,i)=>({id:'demo-mov-'+i, ...m}));
+    pagos = [ {id:'demo-p1', depto_id:'demo-1', mes:mesActual(), monto:60, fecha_pago:mesActual()+'-03'} ];
+    config = {saldo_inicial:500, fondo_emergencia:20, deuda_actual:0, usar_cuota_manual:true, cuota_manual:35};
+    render();
+    return;
+  }
+  db.collection('departamentos').onSnapshot(snap=>{ deptos = snap.docs.map(d=>({id:d.id, ...d.data()})); render(); });
+  db.collection('movimientos').onSnapshot(snap=>{ movs = snap.docs.map(d=>({id:d.id, ...d.data()})); render(); });
+  db.collection('recibos').onSnapshot(snap=>{ recibos = snap.docs.map(d=>({id:d.id, ...d.data()})); });
+  db.collection('pagos').onSnapshot(snap=>{ pagos = snap.docs.map(d=>({id:d.id, ...d.data()})); render(); if(g('hist-overlay').style.display==='flex'&&histDeptoId) showHistorial(histDeptoId); });
+  db.doc('config/general').onSnapshot(snap=>{ config = snap.exists ? (snap.data()||{}) : {}; render(); });
+  db.doc('config/correo').onSnapshot(snap=>{ correoCfg = Object.assign({url:'',clave:'',remitente:''}, snap.exists?(snap.data()||{}):{}); if(currentTab==='config') render(); });
+})();
+</script>
+</body>
+</html>
